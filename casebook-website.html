@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casebook</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #ffffff;
+    font-family: "Times New Roman", Times, serif;
+    color: #1a1a1a;
+    font-size: 18px;
+  }
+
+  /* Top navbar */
+  nav.topnav {
+    background: #0f2942;
+    color: #f5f0e1;
+    padding: 20px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid #b8860b;
+  }
+  nav.topnav h1 {
+    margin: 0;
+    font-family: "Times New Roman", Times, serif;
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  nav.topnav .tagline {
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: #e8ddc7;
+    font-style: italic;
+  }
+  nav.topnav .firm-name {
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: #d4af37;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  /* Page layout */
+  #layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    max-width: 1280px;
+    margin: 0 auto;
+    min-height: calc(100vh - 90px);
+  }
+  @media (max-width: 900px) {
+    #layout { grid-template-columns: 1fr; }
+  }
+
+  /* Sidebar */
+  aside {
+    border-right: 1px solid #e4e4e4;
+    padding: 24px 22px;
+    background: #faf9f6;
+  }
+  @media (max-width: 900px) {
+    aside { border-right: none; border-bottom: 1px solid #e4e4e4; }
+  }
+  aside h2 {
+    font-size: 18px;
+    color: #0f2942;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 2px solid #b8860b;
+    padding-bottom: 6px;
+    margin: 0 0 14px;
+  }
+  aside h2.second { margin-top: 28px; }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 18px;
+    font-family: inherit;
+    border: 1.5px solid #c9c4b8;
+    border-radius: 6px;
+    background: #fff;
+  }
+  input[type="text"]:focus { outline: 2px solid #0f2942; border-color: #0f2942; }
+
+  .sort-row { margin-top: 14px; }
+  .sort-row label {
+    display: block;
+    font-size: 15px;
+    color: #444;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  select {
+    width: 100%;
+    padding: 10px 10px;
+    font-size: 16px;
+    font-family: inherit;
+    border: 1.5px solid #c9c4b8;
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  button, label.btn {
+    font-family: "Times New Roman", Times, serif;
+    cursor: pointer;
+  }
+  .btn {
+    border: none;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 16px;
+    font-weight: bold;
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+  }
+  .btn-primary { background: #0f2942; color: #f5f0e1; }
+  .btn-primary:hover { background: #16385a; }
+  .btn-gold { background: #b8860b; color: #fff; }
+  .btn-gold:hover { background: #a3760a; }
+  .btn-outline { background: #fff; color: #0f2942; border: 1.5px solid #0f2942; }
+  .btn-outline:hover { background: #f1f1f1; }
+  .btn-danger { background: #7a1f1f; color: #fff; }
+  .btn-danger:hover { background: #601818; }
+  .btn-sm { padding: 8px 12px; font-size: 14px; border-radius: 5px; width: auto; display: inline-block; margin: 0; }
+
+  #dropzone {
+    display: block;
+    margin-top: 16px;
+    border: 2px dashed #b8860b;
+    border-radius: 10px;
+    padding: 20px 14px;
+    text-align: center;
+    color: #6b6b6b;
+    font-size: 14.5px;
+    background: #fffdf7;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  #dropzone.dragover { background: #fbf1dc; border-color: #0f2942; }
+  #dropzone strong { color: #0f2942; }
+  #dropzone .hint { font-size: 12.5px; color: #888; margin-top: 6px; }
+  input[type="file"] { display: none; }
+
+  /* Main content */
+  main {
+    padding: 28px 36px 80px;
+  }
+
+  .today-banner {
+    background: #faf6ea;
+    border: 1px solid #e0d9c3;
+    border-radius: 8px;
+    padding: 14px 20px;
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .today-banner .today-label {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #8a7a4a;
+    font-weight: bold;
+  }
+  .today-banner .today-date {
+    font-size: 24px;
+    font-weight: bold;
+    color: #0f2942;
+    margin-top: 2px;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+  @media (max-width: 700px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  .stat-card {
+    border: 1px solid #ddd8c8;
+    border-top: 4px solid #0f2942;
+    border-radius: 8px;
+    padding: 14px 16px;
+    background: #fff;
+    text-align: center;
+  }
+  .stat-card.warn { border-top-color: #7a1f1f; }
+  .stat-number { font-size: 30px; font-weight: bold; color: #0f2942; }
+  .stat-card.warn .stat-number { color: #7a1f1f; }
+  .stat-label { font-size: 13.5px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+
+  .timeline-header {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #0f2942;
+    margin: 20px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #b8860b;
+  }
+  .timeline-header:first-child { margin-top: 0; }
+  .timeline-header.overdue-header { color: #7a1f1f; border-bottom-color: #7a1f1f; }
+
+  #caseList { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 700px) { #caseList { grid-template-columns: 1fr; } }
+  .timeline-header { grid-column: 1 / -1; }
+  .empty-state { grid-column: 1 / -1; }
+
+  .case-card {
+    border: 1px solid #ddd8c8;
+    border-left: 6px solid #0f2942;
+    border-radius: 8px;
+    padding: 16px 18px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .case-card.overdue { border-left-color: #7a1f1f; }
+  .case-card.soon { border-left-color: #b8860b; }
+  .case-title { font-size: 21px; font-weight: bold; color: #0f2942; margin: 0 0 6px; }
+  .case-meta { font-size: 16px; color: #333; margin: 3px 0; line-height: 1.4; }
+  .case-meta .label { font-weight: bold; color: #555; }
+  .hearing-date { font-size: 17px; font-weight: bold; color: #7a1f1f; margin: 8px 0; }
+  .case-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  .empty-state { text-align: center; color: #888; padding: 70px 20px; font-size: 19px; line-height: 1.6; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(15,41,66,0.55);
+    align-items: center; justify-content: center;
+    z-index: 50; padding: 16px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: #fff; border-radius: 10px; padding: 26px;
+    max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto;
+    border-top: 5px solid #0f2942;
+  }
+  .modal h2 { margin-top: 0; font-size: 25px; color: #0f2942; }
+  .modal label { display: block; font-size: 15px; font-weight: bold; color: #444; margin: 12px 0 4px; }
+  .modal input[type="text"], .modal input[type="date"], .modal textarea {
+    width: 100%; padding: 10px 12px; font-size: 17px; font-family: inherit;
+    border: 1.5px solid #c9c4b8; border-radius: 6px;
+  }
+  .modal textarea { resize: vertical; min-height: 70px; }
+  .modal-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+  .danger-text { color: #7a1f1f; font-size: 16px; line-height: 1.5; margin: 10px 0; }
+  .extract-preview {
+    background: #f7f5ef; border: 1px solid #ddd8c8; border-radius: 6px; padding: 10px;
+    font-size: 14px; max-height: 140px; overflow-y: auto; white-space: pre-wrap; color: #555; margin-top: 8px;
+  }
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #0f2942; color: #f5f0e1; padding: 13px 22px; border-radius: 8px;
+    font-size: 16px; display: none; z-index: 100; box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+  }
+  .history-entry {
+    border-left: 3px solid #b8860b;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background: #faf9f6;
+    border-radius: 0 6px 6px 0;
+  }
+  .history-entry .hist-dates { font-size: 16px; font-weight: bold; color: #0f2942; }
+  .history-entry .hist-when { font-size: 13px; color: #888; margin-top: 2px; }
+  .history-entry .hist-note { font-size: 14.5px; color: #444; margin-top: 4px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <h1>Casebook</h1>
+  <div style="text-align:right;">
+    <div class="firm-name">Newaz Mahmud &amp; Associates</div>
+    <span class="tagline">Your trusted legal partner</span>
+  </div>
+</nav>
+
+<div id="layout">
+  <aside>
+    <h2>Search</h2>
+    <input type="text" id="searchBox" placeholder="Case name, number, party, court...">
+
+    <div class="sort-row">
+      <label for="sortSelect">Sort by</label>
+      <select id="sortSelect">
+        <option value="dateAsc">Hearing date (soonest first)</option>
+        <option value="dateDesc">Hearing date (latest first)</option>
+        <option value="az">Title A → Z</option>
+        <option value="za">Title Z → A</option>
+      </select>
+    </div>
+
+    <h2 class="second">Actions</h2>
+    <button class="btn btn-primary" onclick="openCaseModal()">+ Add Case</button>
+    <button class="btn btn-gold" onclick="downloadBackup()">Download Backup</button>
+    <label class="btn btn-outline" for="restoreInput">Restore Backup</label>
+    <input type="file" id="restoreInput" accept="application/json,.json">
+
+    <h2 class="second">Import from File</h2>
+    <label id="dropzone" for="fileImportInput" onclick="tryPickFile(event)">
+      Drag &amp; drop a PDF or Word file here,<br>
+      or <strong>click to browse</strong>.
+      <div class="hint">We'll pull out the text so you can quickly confirm the case details.</div>
+    </label>
+    <input type="file" id="fileImportInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+  </aside>
+
+  <main>
+    <div class="today-banner">
+      <div class="today-label">Today's Date</div>
+      <div class="today-date" id="todayDateDisplay"></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-number" id="statTotal">0</div><div class="stat-label">Total Cases</div></div>
+      <div class="stat-card warn"><div class="stat-number" id="statOverdue">0</div><div class="stat-label">Overdue</div></div>
+      <div class="stat-card"><div class="stat-number" id="statToday">0</div><div class="stat-label">Today</div></div>
+      <div class="stat-card"><div class="stat-number" id="statWeek">0</div><div class="stat-label">Next 7 Days</div></div>
+    </div>
+
+    <div id="caseList"></div>
+  </main>
+</div>
+
+<!-- Add / Edit Case Modal -->
+<div class="modal-overlay" id="caseModalOverlay">
+  <div class="modal">
+    <h2 id="caseModalTitle">Add Case</h2>
+    <div id="extractPreviewWrap" style="display:none;">
+      <label>Extracted text (for your reference)</label>
+      <div class="extract-preview" id="extractPreview"></div>
+    </div>
+    <label for="fCaseTitle">Case Title *</label>
+    <input type="text" id="fCaseTitle" placeholder="e.g. Karim vs. State of Bangladesh">
+    <label for="fCaseNumber">Case Number</label>
+    <input type="text" id="fCaseNumber" placeholder="e.g. Criminal Appeal No. 4521 of 2026">
+    <label for="fCourt">Court</label>
+    <input type="text" id="fCourt" placeholder="e.g. Supreme Court of Bangladesh, High Court Division">
+    <label for="fParties">Parties</label>
+    <input type="text" id="fParties" placeholder="e.g. Karim (Appellant) vs State (Respondent)">
+    <label for="fHearingDate">Next Hearing Date</label>
+    <input type="date" id="fHearingDate">
+    <label for="fNotes">Notes</label>
+    <textarea id="fNotes" placeholder="Any additional notes..."></textarea>
+    <div class="modal-buttons">
+      <button class="btn-sm btn btn-outline" onclick="closeCaseModal()">Cancel</button>
+      <button class="btn-sm btn btn-primary" onclick="saveCaseFromModal()">Save Case</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer Date Modal -->
+<div class="modal-overlay" id="transferModalOverlay">
+  <div class="modal">
+    <h2>Transfer to Next Date</h2>
+    <label for="fNewDate">New Hearing Date</label>
+    <input type="date" id="fNewDate">
+    <label for="fTransferNote">Reason / Note (optional)</label>
+    <textarea id="fTransferNote" placeholder="e.g. Adjourned on request of respondent"></textarea>
+    <div class="modal-buttons">
+      <button class="btn-sm btn btn-outline" onclick="closeTransferModal()">Cancel</button>
+      <button class="btn-sm btn btn-primary" onclick="confirmTransfer()">Update Date</button>
+    </div>
+  </div>
+</div>
+
+<!-- Date History Modal -->
+<div class="modal-overlay" id="historyModalOverlay">
+  <div class="modal">
+    <h2 id="historyModalTitle">Date History</h2>
+    <div id="historyList"></div>
+    <div class="modal-buttons">
+      <button class="btn-sm btn btn-outline" onclick="closeHistoryModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal (two-step) -->
+<div class="modal-overlay" id="deleteModalOverlay">
+  <div class="modal">
+    <h2>Delete this case?</h2>
+    <p class="danger-text" id="deleteCaseNamePreview"></p>
+    <p class="danger-text">This cannot be undone. Type <strong>DELETE</strong> below to confirm.</p>
+    <input type="text" id="deleteConfirmInput" placeholder="Type DELETE to confirm">
+    <div class="modal-buttons">
+      <button class="btn-sm btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-sm btn btn-danger" id="deleteConfirmBtn" onclick="confirmDelete()" disabled>Delete Permanently</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+let cases = [];
+let editingId = null;
+let transferId = null;
+let deleteId = null;
+let pendingExtractText = "";
+
+const caseListEl = document.getElementById('caseList');
+const searchBox = document.getElementById('searchBox');
+const sortSelect = document.getElementById('sortSelect');
+const dropzone = document.getElementById('dropzone');
+const fileImportInput = document.getElementById('fileImportInput');
+const restoreInput = document.getElementById('restoreInput');
+
+function uid() { return 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2600);
+}
+
+/* ---------- Persistence ---------- */
+async function loadCases() {
+  try {
+    if (window.storage) {
+      const res = await window.storage.get('casebook:cases', false);
+      if (res && res.value) {
+        cases = JSON.parse(res.value);
+        return;
+      }
+    }
+  } catch (e) { /* no saved data yet */ }
+  cases = [];
+}
+
+async function persistCases() {
+  try {
+    if (window.storage) {
+      await window.storage.set('casebook:cases', JSON.stringify(cases), false);
+    }
+  } catch (e) {
+    console.error('Could not auto-save:', e);
+  }
+}
+
+/* ---------- Rendering ---------- */
+function daysUntil(dateStr) {
+  if (!dateStr) return Infinity;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr + 'T00:00:00');
+  return Math.round((d - today) / 86400000);
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return 'Not scheduled';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function getFiltered() {
+  const q = searchBox.value.trim().toLowerCase();
+  let list = cases.filter(c => {
+    if (!q) return true;
+    return (c.title||'').toLowerCase().includes(q)
+      || (c.caseNumber||'').toLowerCase().includes(q)
+      || (c.court||'').toLowerCase().includes(q)
+      || (c.parties||'').toLowerCase().includes(q);
+  });
+  const sortMode = sortSelect.value;
+  list.sort((a,b) => {
+    if (sortMode === 'az') return (a.title||'').localeCompare(b.title||'');
+    if (sortMode === 'za') return (b.title||'').localeCompare(a.title||'');
+    const da = a.nextHearingDate ? new Date(a.nextHearingDate) : new Date(8640000000000000);
+    const db = b.nextHearingDate ? new Date(b.nextHearingDate) : new Date(8640000000000000);
+    if (sortMode === 'dateDesc') return db - da;
+    return da - db;
+  });
+  return list;
+}
+
+const TIMELINE_ORDER = ['Overdue', 'Today', 'Tomorrow', 'Next 7 Days', 'Later', 'Not Scheduled'];
+
+function getTimelineLabel(dateStr) {
+  if (!dateStr) return 'Not Scheduled';
+  const d = daysUntil(dateStr);
+  if (d < 0) return 'Overdue';
+  if (d === 0) return 'Today';
+  if (d === 1) return 'Tomorrow';
+  if (d <= 7) return 'Next 7 Days';
+  return 'Later';
+}
+
+function renderCaseCard(c) {
+  const dLeft = daysUntil(c.nextHearingDate);
+  let cls = '';
+  if (dLeft !== Infinity) {
+    if (dLeft < 0) cls = 'overdue';
+    else if (dLeft <= 7) cls = 'soon';
+  }
+  const card = document.createElement('div');
+  card.className = 'case-card ' + cls;
+  card.innerHTML = `
+    <div class="case-title">${escapeHtml(c.title || 'Untitled Case')}</div>
+    ${c.caseNumber ? `<div class="case-meta"><span class="label">Case No:</span> ${escapeHtml(c.caseNumber)}</div>` : ''}
+    ${c.court ? `<div class="case-meta"><span class="label">Court:</span> ${escapeHtml(c.court)}</div>` : ''}
+    ${c.parties ? `<div class="case-meta"><span class="label">Parties:</span> ${escapeHtml(c.parties)}</div>` : ''}
+    <div class="hearing-date">Next Hearing: ${formatDate(c.nextHearingDate)}</div>
+    ${c.notes ? `<div class="case-meta"><span class="label">Notes:</span> ${escapeHtml(c.notes)}</div>` : ''}
+    <div class="case-buttons">
+      <button class="btn btn-gold btn-sm" onclick="openTransferModal('${c.id}')">Transfer to Next Date</button>
+      <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${c.id}')">Date History</button>
+      <button class="btn btn-outline btn-sm" onclick="openCaseModal('${c.id}')">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${c.id}')">Delete</button>
+    </div>
+  `;
+  return card;
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = cases.length;
+  document.getElementById('statOverdue').textContent = cases.filter(c => c.nextHearingDate && daysUntil(c.nextHearingDate) < 0).length;
+  document.getElementById('statToday').textContent = cases.filter(c => c.nextHearingDate && daysUntil(c.nextHearingDate) === 0).length;
+  document.getElementById('statWeek').textContent = cases.filter(c => c.nextHearingDate && daysUntil(c.nextHearingDate) >= 0 && daysUntil(c.nextHearingDate) <= 7).length;
+}
+
+function render() {
+  updateStats();
+  const list = getFiltered();
+  caseListEl.innerHTML = '';
+  if (list.length === 0) {
+    caseListEl.innerHTML = `<div class="empty-state">
+      ${cases.length === 0
+        ? 'No cases yet. Click "Add Case" or drag in a PDF / Word file to get started.'
+        : 'No cases match your search.'}
+    </div>`;
+    return;
+  }
+
+  const sortMode = sortSelect.value;
+  const useTimeline = (sortMode === 'dateAsc' || sortMode === 'dateDesc');
+
+  if (!useTimeline) {
+    list.forEach(c => caseListEl.appendChild(renderCaseCard(c)));
+    return;
+  }
+
+  const groups = {};
+  list.forEach(c => {
+    const label = getTimelineLabel(c.nextHearingDate);
+    if (!groups[label]) groups[label] = [];
+    groups[label].push(c);
+  });
+
+  const order = sortMode === 'dateDesc' ? [...TIMELINE_ORDER].reverse() : TIMELINE_ORDER;
+  order.forEach(label => {
+    if (!groups[label] || groups[label].length === 0) return;
+    const header = document.createElement('div');
+    header.className = 'timeline-header' + (label === 'Overdue' ? ' overdue-header' : '');
+    header.textContent = `${label} (${groups[label].length})`;
+    caseListEl.appendChild(header);
+    groups[label].forEach(c => caseListEl.appendChild(renderCaseCard(c)));
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+searchBox.addEventListener('input', render);
+sortSelect.addEventListener('change', render);
+
+/* ---------- Add / Edit Modal ---------- */
+function openCaseModal(id) {
+  editingId = id || null;
+  document.getElementById('caseModalTitle').textContent = id ? 'Edit Case' : 'Add Case';
+  const previewWrap = document.getElementById('extractPreviewWrap');
+  if (!id) {
+    document.getElementById('fCaseTitle').value = '';
+    document.getElementById('fCaseNumber').value = '';
+    document.getElementById('fCourt').value = '';
+    document.getElementById('fParties').value = '';
+    document.getElementById('fHearingDate').value = '';
+    document.getElementById('fNotes').value = '';
+    if (pendingExtractText) {
+      previewWrap.style.display = 'block';
+      document.getElementById('extractPreview').textContent = pendingExtractText;
+    } else {
+      previewWrap.style.display = 'none';
+    }
+  } else {
+    const c = cases.find(x => x.id === id);
+    document.getElementById('fCaseTitle').value = c.title || '';
+    document.getElementById('fCaseNumber').value = c.caseNumber || '';
+    document.getElementById('fCourt').value = c.court || '';
+    document.getElementById('fParties').value = c.parties || '';
+    document.getElementById('fHearingDate').value = c.nextHearingDate || '';
+    document.getElementById('fNotes').value = c.notes || '';
+    previewWrap.style.display = 'none';
+  }
+  document.getElementById('caseModalOverlay').classList.add('active');
+}
+
+function closeCaseModal() {
+  document.getElementById('caseModalOverlay').classList.remove('active');
+  pendingExtractText = '';
+  editingId = null;
+}
+
+async function saveCaseFromModal() {
+  const title = document.getElementById('fCaseTitle').value.trim();
+  if (!title) { showToast('Please enter a case title.'); return; }
+  const data = {
+    title,
+    caseNumber: document.getElementById('fCaseNumber').value.trim(),
+    court: document.getElementById('fCourt').value.trim(),
+    parties: document.getElementById('fParties').value.trim(),
+    nextHearingDate: document.getElementById('fHearingDate').value,
+    notes: document.getElementById('fNotes').value.trim(),
+  };
+  if (editingId) {
+    const c = cases.find(x => x.id === editingId);
+    Object.assign(c, data);
+    showToast('Case updated.');
+  } else {
+    cases.push({ id: uid(), ...data, history: [] });
+    showToast('Case added.');
+  }
+  await persistCases();
+  closeCaseModal();
+  render();
+}
+
+/* ---------- Transfer Modal ---------- */
+function openTransferModal(id) {
+  transferId = id;
+  const c = cases.find(x => x.id === id);
+  document.getElementById('fNewDate').value = c.nextHearingDate || '';
+  document.getElementById('fTransferNote').value = '';
+  document.getElementById('transferModalOverlay').classList.add('active');
+}
+function closeTransferModal() {
+  document.getElementById('transferModalOverlay').classList.remove('active');
+  transferId = null;
+}
+async function confirmTransfer() {
+  const newDate = document.getElementById('fNewDate').value;
+  if (!newDate) { showToast('Please choose a date.'); return; }
+  const c = cases.find(x => x.id === transferId);
+  if (!c.history) c.history = [];
+  c.history.push({ from: c.nextHearingDate, to: newDate, note: document.getElementById('fTransferNote').value.trim(), when: new Date().toISOString() });
+  c.nextHearingDate = newDate;
+  await persistCases();
+  closeTransferModal();
+  render();
+  showToast('Hearing date updated.');
+}
+
+/* ---------- Date History Modal ---------- */
+function openHistoryModal(id) {
+  const c = cases.find(x => x.id === id);
+  document.getElementById('historyModalTitle').textContent = 'Date History — ' + (c.title || 'Untitled Case');
+  const listEl = document.getElementById('historyList');
+  const hist = (c.history || []).slice().sort((a, b) => new Date(b.when) - new Date(a.when));
+  if (hist.length === 0) {
+    listEl.innerHTML = '<p style="color:#888; font-size:16px;">No date transfers recorded yet for this case. Every time you use "Transfer to Next Date," it will show up here.</p>';
+  } else {
+    listEl.innerHTML = hist.map(h => `
+      <div class="history-entry">
+        <div class="hist-dates">${formatDate(h.from)} &nbsp;→&nbsp; ${formatDate(h.to)}</div>
+        ${h.note ? `<div class="hist-note">${escapeHtml(h.note)}</div>` : ''}
+        <div class="hist-when">Updated on ${new Date(h.when).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('historyModalOverlay').classList.add('active');
+}
+function closeHistoryModal() {
+  document.getElementById('historyModalOverlay').classList.remove('active');
+}
+
+/* ---------- Delete Modal (two-step confirm) ---------- */
+function openDeleteModal(id) {
+  deleteId = id;
+  const c = cases.find(x => x.id === id);
+  document.getElementById('deleteCaseNamePreview').textContent = 'You are about to delete: "' + (c.title || 'Untitled Case') + '"';
+  document.getElementById('deleteConfirmInput').value = '';
+  document.getElementById('deleteConfirmBtn').disabled = true;
+  document.getElementById('deleteModalOverlay').classList.add('active');
+}
+function closeDeleteModal() {
+  document.getElementById('deleteModalOverlay').classList.remove('active');
+  deleteId = null;
+}
+document.getElementById('deleteConfirmInput').addEventListener('input', function() {
+  document.getElementById('deleteConfirmBtn').disabled = this.value.trim() !== 'DELETE';
+});
+async function confirmDelete() {
+  cases = cases.filter(c => c.id !== deleteId);
+  await persistCases();
+  closeDeleteModal();
+  render();
+  showToast('Case deleted.');
+}
+
+/* ---------- Backup: download & restore ---------- */
+function downloadBackup() {
+  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), cases }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `casebook-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Backup file downloaded. Keep it safe (email it to yourself, save to Drive, etc.).');
+}
+
+restoreInput.addEventListener('change', async function() {
+  const file = this.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    const incoming = Array.isArray(parsed) ? parsed : parsed.cases;
+    if (!Array.isArray(incoming)) throw new Error('Invalid file');
+    cases = incoming;
+    await persistCases();
+    render();
+    showToast('Cases restored from backup.');
+  } catch (e) {
+    showToast('Could not read that backup file.');
+  }
+  this.value = '';
+});
+
+/* ---------- File import / drag & drop with text extraction ---------- */
+async function tryPickFile(event) {
+  if (window.showOpenFilePicker) {
+    event.preventDefault();
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{
+          description: 'Case documents',
+          accept: {
+            'application/pdf': ['.pdf'],
+            'application/msword': ['.doc'],
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+          }
+        }],
+        excludeAcceptAllOption: false,
+        multiple: false
+      });
+      const file = await handle.getFile();
+      handleImportedFile(file);
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.warn('File System Access API failed, falling back:', err);
+        fileImportInput.click();
+      }
+    }
+  }
+}
+
+async function extractTextFromFile(file) {
+  const name = file.name.toLowerCase();
+  try {
+    if (name.endsWith('.pdf')) {
+      if (!window.pdfjsLib) return '';
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      let text = '';
+      const maxPages = Math.min(pdf.numPages, 3);
+      for (let i = 1; i <= maxPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(it => it.str).join(' ') + '\n';
+      }
+      return text.trim();
+    } else if (name.endsWith('.docx')) {
+      if (!window.mammoth) return '';
+      const buf = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buf });
+      return (result.value || '').trim();
+    } else if (name.endsWith('.doc')) {
+      return '';
+    }
+  } catch (e) {
+    console.error('Extraction failed', e);
+    return '';
+  }
+  return '';
+}
+
+function guessFieldsFromText(text) {
+  const guess = { title: '', caseNumber: '', court: '', parties: '', nextHearingDate: '' };
+  if (!text) return guess;
+  const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+
+  const numMatch = text.match(/(?:case\s*no\.?|c\.?no\.?|petition\s*no\.?|appeal\s*no\.?)\s*[:\-]?\s*([A-Za-z0-9\/\-\.\s]{3,40})/i);
+  if (numMatch) guess.caseNumber = numMatch[1].trim().split('\n')[0];
+
+  const courtMatch = text.match(/(?:in the|before the)\s+([A-Za-z\s]+court[A-Za-z\s]*)/i);
+  if (courtMatch) guess.court = courtMatch[1].trim();
+
+  const vsMatch = text.match(/([A-Za-z.,\s]{3,60}\b(?:vs\.?|versus)\b[A-Za-z.,\s]{3,60})/i);
+  if (vsMatch) {
+    guess.parties = vsMatch[1].trim().replace(/\s+/g, ' ');
+    guess.title = guess.parties;
+  }
+
+  const dateMatch = text.match(/(\d{1,2})[\/\-\s](\d{1,2}|[A-Za-z]+)[\/\-\s](\d{2,4})/);
+  if (dateMatch) {
+    const parsedDate = parseFlexibleDate(dateMatch[0]);
+    if (parsedDate) guess.nextHearingDate = parsedDate;
+  }
+
+  if (!guess.title && lines.length) guess.title = lines[0].slice(0, 80);
+  return guess;
+}
+
+function parseFlexibleDate(str) {
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) return d.toISOString().slice(0,10);
+  return '';
+}
+
+async function handleImportedFile(file) {
+  if (!file) return;
+  const okTypes = ['.pdf', '.doc', '.docx'];
+  const lower = file.name.toLowerCase();
+  if (!okTypes.some(ext => lower.endsWith(ext))) {
+    showToast('Please choose a PDF or Word file.');
+    return;
+  }
+  showToast('Reading file...');
+  const text = await extractTextFromFile(file);
+  pendingExtractText = text || '(Could not extract text automatically — please fill in the details manually.)';
+  const guess = guessFieldsFromText(text);
+  openCaseModal(null);
+  document.getElementById('fCaseTitle').value = guess.title || file.name.replace(/\.(pdf|docx?|)$/i, '');
+  document.getElementById('fCaseNumber').value = guess.caseNumber || '';
+  document.getElementById('fCourt').value = guess.court || '';
+  document.getElementById('fParties').value = guess.parties || '';
+  document.getElementById('fHearingDate').value = guess.nextHearingDate || '';
+}
+
+fileImportInput.addEventListener('change', function() {
+  handleImportedFile(this.files[0]);
+  this.value = '';
+});
+
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  handleImportedFile(file);
+});
+
+/* ---------- Today's date banner ---------- */
+function renderTodayBanner() {
+  const el = document.getElementById('todayDateDisplay');
+  if (!el) return;
+  const today = new Date();
+  el.textContent = today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+renderTodayBanner();
+setInterval(renderTodayBanner, 60 * 1000);
+
+/* ---------- Init ---------- */
+async function requestPersistentStorage() {
+  try {
+    if (navigator.storage && navigator.storage.persist) {
+      const already = navigator.storage.persisted ? await navigator.storage.persisted() : false;
+      if (!already) {
+        const granted = await navigator.storage.persist();
+        if (granted) showToast('Storage permission granted — your cases will be kept safely on this device.');
+      }
+    }
+  } catch (e) {
+    console.warn('Persistent storage request not supported:', e);
+  }
+}
+
+(async function init() {
+  await requestPersistentStorage();
+  await loadCases();
+  render();
+})();
+</script>
+</body>
+</html>
